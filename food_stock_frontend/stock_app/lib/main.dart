@@ -1,7 +1,7 @@
-import 'dart:html';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+
+import 'package:stock_app/widgets/nav_drawer.dart';
 
 void main() {
   runApp(const MyApp());
@@ -10,38 +10,23 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
-  Future<http.Response> buttonPressed() async {
-    http.Response returnedResult =  await http.get(
-      Uri.parse('http://localhost:8000/products'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset-UTF-8'
-        });
-    //print(returnedResult.body);
-    return returnedResult;
-
-    }
-
   @override
   Widget build(BuildContext context){
     return MaterialApp(
-      title: 'Clever Tech Memes',
+      title: 'Estoque',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.amber,
       ),
       home: Scaffold(
+        drawer: NavDrawer(),
         appBar: AppBar(
-          centerTitle: true, title:  const Text('Clever Tech Memes')) ,
+          centerTitle: true, title:  const Text(''),),
         body: Center(
           child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(0.0),
-            child: const Text('Welcome')),
-          Padding(
-              padding: const EdgeInsets.all(0.0),
-              child: ElevatedButton(
-                onPressed: buttonPressed, child: Text('click')),
-                )
+            child: const Text('Promoções dos mercados próximos a você')),
             ],
     ))));
   }

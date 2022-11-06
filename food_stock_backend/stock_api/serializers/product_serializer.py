@@ -1,4 +1,3 @@
-from dataclasses import field
 from rest_framework.serializers import ModelSerializer
 
 from stock_api.db_models.product import Product

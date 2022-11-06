@@ -1,15 +1,26 @@
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.generics import GenericAPIView
 from rest_framework import status
+
 from django.http import JsonResponse, HttpResponse
 
+from stock_api.exceptions.product_exceptions import PublicProductApiFailed
 from stock_api.serializers.product_serializer import ProductSerializer
+from stock_api.thrid_api.product_api import ProductApi
 from stock_api.db_models.product import Product
+
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 10
 
 
 class ProductController(GenericAPIView):
     serializer_class = ProductSerializer
     queryset = Product.objects
     lookup_field = "bar_code"
+    pagination_class = StandardResultsSetPagination
+    product_api = ProductApi()
 
     def get(self, request, bar_code: str = ""):
         try:
@@ -18,12 +29,12 @@ class ProductController(GenericAPIView):
             else:
                 products = self.get_queryset()
                 products = products.all()
+                products = self.paginate_queryset(queryset=products)
 
             fields_serialized = self.get_serializer(products, many=True)
-
             return JsonResponse(fields_serialized.data, status=status.HTTP_200_OK, safe=False)
-
-        except queryset.model.DoesNotExist as error:
+        
+        except self.queryset.model.DoesNotExist as error:
             return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, bar_code: str):
@@ -51,11 +62,23 @@ class ProductController(GenericAPIView):
         return HttpResponse(status=status.HTTP_200_OK)
 
     def post(self, request):
-        product_serializer = self.get_serializer(data=request.data)
+        if 'bar_code' in request.data:
+            try:
+                response = self.product_api.get_product_by_barcode(
+                    request.data['bar_code'])
+            except PublicProductApiFailed:
+                return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
 
-        if product_serializer.is_valid():
-            product_serializer.save()
-            return HttpResponse(status=status.HTTP_201_CREATED)
+            request.data.update({
+                'name':response.name,
+                'net_weight':response.net_weight    
+            })
+
+            product_serializer = self.get_serializer(data=request.data)
+
+            if product_serializer.is_valid():
+                product_serializer.save()
+                return HttpResponse(status=status.HTTP_201_CREATED)
 
         else:
             return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
