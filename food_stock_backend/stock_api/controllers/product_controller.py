@@ -1,7 +1,8 @@
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.generics import GenericAPIView
 from rest_framework import status
-
+from rest_framework.request import Request
+from django.contrib.auth.models import User
 from django.http import JsonResponse, HttpResponse
 
 from stock_api.exceptions.product_exceptions import PublicProductApiFailed
@@ -22,13 +23,15 @@ class ProductController(GenericAPIView):
     pagination_class = StandardResultsSetPagination
     product_api = ProductApi()
 
-    def get(self, request, bar_code: str = ""):
+    def get(self, request: Request, bar_code: str = ""):
         try:
+            user = User.objects.get(username=request.user)
+
             if bar_code:
-                products = self.__get_list_product()
+                products = self.__get_list_product(user.pk)
             else:
                 products = self.get_queryset()
-                products = products.all()
+                products = products.filter(user_id=user.pk)
                 products = self.paginate_queryset(queryset=products)
 
             fields_serialized = self.get_serializer(products, many=True)
@@ -37,8 +40,9 @@ class ProductController(GenericAPIView):
         except self.queryset.model.DoesNotExist as error:
             return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
 
-    def put(self, request, bar_code: str):
-        products = self.__get_list_product()
+    def put(self, request: Request, bar_code: str):
+        user = User.objects.get(username=request.user)
+        products = self.__get_list_product(user.pk)
 
         if products:
             fields_serialized = self.get_serializer(data=request.data, partial=True)
@@ -55,35 +59,37 @@ class ProductController(GenericAPIView):
         else:
             return HttpResponse(status=status.HTTP_404_NOT_FOUND)
 
-    def delete(self, request, bar_code: str):
-        product = self.__get_list_product()
+    def delete(self, request: Request, bar_code: str):
+        user = User.objects.get(username=request.user)
+        product = self.__get_list_product(user.pk)
         product.delete()
 
         return HttpResponse(status=status.HTTP_200_OK)
 
-    def post(self, request):
-        if 'bar_code' in request.data:
-            try:
-                response = self.product_api.get_product_by_barcode(
+    def post(self, request: Request):
+        try:
+            response = self.product_api.get_product_by_barcode(
                     request.data['bar_code'])
-            except PublicProductApiFailed:
-                return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
-
+            
             request.data.update({
                 'name':response.name,
                 'net_weight':response.net_weight    
             })
 
+            user = User.objects.get(username=request.user)
+            request.data.update({"user": user.pk})
+            
             product_serializer = self.get_serializer(data=request.data)
+            if not product_serializer.is_valid():
+                return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
 
-            if product_serializer.is_valid():
-                product_serializer.save()
-                return HttpResponse(status=status.HTTP_201_CREATED)
+            product_serializer.save()
+            return HttpResponse(status=status.HTTP_201_CREATED)
 
-        else:
-            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+        except PublicProductApiFailed:
+            return HttpResponse(status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
-    def __get_list_product(self):
+    def __get_list_product(self, user_id):
         """
         Returns the object list the view is displaying.
 
@@ -103,7 +109,10 @@ class ProductController(GenericAPIView):
             (self.__class__.__name__, lookup_url_kwarg)
         )
 
-        filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
+        filter_kwargs = {
+            self.lookup_field: self.kwargs[lookup_url_kwarg],
+            "user_id": user_id
+            }
         # # May raise a permission denied
         # self.check_object_permissions(self.request, obj)
         return queryset.filter(**filter_kwargs)

@@ -9,7 +9,6 @@ from stock_api.constants import FOOD_STOCK
 
 # Take environment variables from .env file
 env = environ.Env()
-print(path.join(FOOD_STOCK,'.env'))
 environ.Env.read_env(path.join(FOOD_STOCK,'.env'))
 
 RETURN_DATA = 'return'

@@ -27,7 +27,7 @@ class MyCustomFormState extends State<MyCustomForm> {
   Widget build(BuildContext context) {
     // Build a Form widget using the _formKey created above.
     String? bar_code;
-    DateTime expiration_data = DateTime.now(); 
+    DateTime expiration_data = DateTime.now();
 
     return Form(
       key: _formKey,
@@ -35,7 +35,12 @@ class MyCustomFormState extends State<MyCustomForm> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TextFormField(
-            onSaved: (value){bar_code=value.toString();},
+            decoration: InputDecoration(
+              hintText: "QR CODE",
+            ),
+            onSaved: (value) {
+              bar_code = value.toString();
+            },
             // The validator receives the text that the user has entered.
             validator: (value) {
               if (value == null || value.isEmpty) {
@@ -43,10 +48,6 @@ class MyCustomFormState extends State<MyCustomForm> {
               }
               return null;
             },
-          ),
-          TextFormField(
-            // onSaved: (value){expiration_data=DateTime.parse(value.toString());},
-            // The validator receives the text that the user has entered.
           ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -59,16 +60,17 @@ class MyCustomFormState extends State<MyCustomForm> {
                   _formKey.currentState?.save();
                   DateTime now = new DateTime.now();
                   DateTime date = new DateTime(now.year, now.month, now.day);
-                  Product current_product = Product(
-                    bar_code: bar_code,
-                    expiration_date: date);
-                    postProduct(current_product).then((value){
-                      Text message = value==true ? Text('Salvo com sucesso'): Text('Código de barras inválido');
-                      ScaffoldMessenger.of(context).showSnackBar(
+                  Product current_product =
+                      Product(bar_code: bar_code, expiration_date: date);
+                  postProduct(current_product).then((value) {
+                    Text message = value == true
+                        ? Text('Salvo com sucesso')
+                        : Text('Código de barras inválido');
+                    ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: message),
-                  );});
+                    );
+                  });
 
-                  
                   _formKey.currentState!.reset();
                 }
               },
@@ -81,13 +83,9 @@ class MyCustomFormState extends State<MyCustomForm> {
   }
 }
 
-class AddProduct extends StatelessWidget{
-
+class AddProduct extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(),
-      body: MyCustomForm()
-    );
+    return Scaffold(appBar: AppBar(), body: MyCustomForm());
   }
 }

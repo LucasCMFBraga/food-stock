@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "food-stock-backend"
+version = "0.1.0"
+description = "Food Stock backend"
+authors = ["Lucas Braga <lucascmf.braga@gmail.com>"]
+maintainers = [
+    "Lucas Braga <lucascmf.braga@gmail.com>"
+]
+readme = "README.md"
+packages = [{include = "food_stock_backend"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+django = "^4.2.3"
+djangorestframework = "^3.14.0"
+django-filter = "^23.2"
+django-environ = "^0.10.0"
+django-cors-headers = "^4.2.0"
+djangorestframework-simplejwt = "^5.2.2"
+requests = "^2.31.0"
+
+[tool.poetry.group.dev.dependencies]
+fastapi = {pytest="^7.4.0", extras=["all"]}
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+

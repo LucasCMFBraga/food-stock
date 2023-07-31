@@ -1,11 +1,13 @@
 from rest_framework.serializers import ModelSerializer
-
+from stock_api.serializers.user_serializer import UserSerializer
 from stock_api.db_models.product import Product
 
 class ProductSerializer(ModelSerializer):
+    user = UserSerializer
+
     class Meta:
         model = Product
-        fields = ["id", "name", "bar_code", "net_weight", "expiration_date"]
+        fields = ["id", "name", "bar_code", "net_weight", "expiration_date", "user"]
     
     def update(self, instance: Product, validated_data):
         instance.name = validated_data.get("name", instance.name)
